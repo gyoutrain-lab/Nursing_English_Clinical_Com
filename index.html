@@ -1,0 +1,834 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nursing Care Plan: Formal to Informal Match Matrix</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Canvas Confetti Library -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        medical: {
+                            50: '#f0f7ff',
+                            100: '#e0effe',
+                            500: '#0284c7',
+                            600: '#0369a1',
+                            700: '#035485',
+                            800: '#075985',
+                            900: '#0c4a6e',
+                        },
+                        tealmed: {
+                            500: '#14b8a6',
+                            600: '#0d9488',
+                            700: '#0f766e'
+                        }
+                    },
+                    animation: {
+                        'shake': 'shake 0.4s cubic-bezier(.36,.07,.19,.97) both',
+                        'pop': 'pop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards',
+                        'bam': 'bam 0.5s ease-out forwards'
+                    },
+                    keyframes: {
+                        shake: {
+                            '10%, 90%': { transform: 'translate3d(-2px, 0, 0)' },
+                            '20%, 80%': { transform: 'translate3d(4px, 0, 0)' },
+                            '30%, 50%, 70%': { transform: 'translate3d(-6px, 0, 0)' },
+                            '40%, 60%': { transform: 'translate3d(6px, 0, 0)' }
+                        },
+                        pop: {
+                            '0%': { transform: 'scale(0.8)', opacity: '0' },
+                            '100%': { transform: 'scale(1)', opacity: '1' }
+                        },
+                        bam: {
+                            '0%': { transform: 'scale(0.5) rotate(-10deg)', opacity: '0' },
+                            '50%': { transform: 'scale(1.2) rotate(5deg)', opacity: '1' },
+                            '100%': { transform: 'scale(1) rotate(0deg)', opacity: '1' }
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-800 min-h-screen flex flex-col justify-between selection:bg-sky-500 selection:text-white">
+
+    <!-- OVERLAY FX FOR INCORRECT "BAM!" EFFECT -->
+    <div id="bam-overlay" class="fixed inset-0 pointer-events-none z-50 flex items-center justify-center hidden">
+        <div class="bg-red-600 border-8 border-yellow-400 text-yellow-300 font-extrabold text-6xl md:text-8xl px-8 py-6 rounded-3xl shadow-2xl transform -rotate-12 animate-bam uppercase tracking-wider border-dashed flex flex-col items-center">
+            <span>💥 BAM! 💥</span>
+            <span class="text-2xl md:text-3xl text-white font-bold mt-2">-30 PTS INCORRECT!</span>
+        </div>
+    </div>
+
+    <!-- MAIN APP CONTAINER -->
+    <div id="app" class="flex-grow flex flex-col max-w-7xl w-full mx-auto p-3 sm:p-6">
+
+        <!-- HEADER BAR -->
+        <header class="bg-gradient-to-r from-medical-900 via-medical-800 to-tealmed-700 text-white rounded-2xl p-4 sm:p-6 shadow-xl mb-6 border border-sky-700/50 flex flex-col md:flex-row items-center justify-between gap-4">
+            <div class="flex items-center gap-4">
+                <div class="w-12 h-12 sm:w-14 sm:h-14 bg-white/10 rounded-2xl flex items-center justify-center text-amber-400 text-2xl sm:text-3xl border border-white/20 shadow-inner">
+                    <i class="fa-solid font-bold fa-user-nurse"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl sm:text-2xl font-extrabold tracking-tight text-white flex items-center gap-2">
+                        Nursing Care Plan <span class="bg-amber-400 text-slate-900 text-xs px-2.5 py-0.5 rounded-full font-bold">Match Matrix</span>
+                    </h1>
+                    <p class="text-xs sm:text-sm text-sky-200 mt-0.5">Spoken English Clinical Formal to Informal Conversational Practice</p>
+                    <p class="text-[10px] sm:text-xs text-sky-300/80 font-medium mt-0.5"><i class="fa-solid fa-code-branch"></i> Curriculum Author: <span class="text-amber-300 font-semibold">Giyono Asfarrasyid</span></p>
+                </div>
+            </div>
+
+            <!-- AUDIO & CONTROLS -->
+            <div class="flex items-center gap-3 bg-slate-900/40 p-2 rounded-xl border border-white/10">
+                <button id="sound-toggle" onclick="toggleAudio()" class="flex items-center gap-2 px-3 py-1.5 bg-sky-500/20 hover:bg-sky-500/30 text-sky-200 rounded-lg text-xs font-semibold transition border border-sky-400/30">
+                    <i id="sound-icon" class="fa-solid fa-volume-high text-amber-400"></i>
+                    <span id="sound-text">SFX: ON</span>
+                </button>
+                <button onclick="resetGame()" class="flex items-center gap-2 px-3 py-1.5 bg-rose-500/20 hover:bg-rose-500/30 text-rose-200 rounded-lg text-xs font-semibold transition border border-rose-400/30">
+                    <i class="fa-solid fa-rotate-right"></i> Reset
+                </button>
+            </div>
+        </header>
+
+        <!-- DASHBOARD DASHBOARD & STATS BOARD -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+            <div class="bg-slate-800/90 border border-slate-700/80 rounded-xl p-3 sm:p-4 text-center">
+                <span class="text-xs text-slate-400 font-medium uppercase tracking-wider block mb-1"><i class="fa-solid fa-trophy text-amber-400"></i> Score</span>
+                <span id="score-display" class="text-2xl sm:text-3xl font-extrabold text-amber-400">0</span>
+            </div>
+            <div class="bg-slate-800/90 border border-slate-700/80 rounded-xl p-3 sm:p-4 text-center">
+                <span class="text-xs text-slate-400 font-medium uppercase tracking-wider block mb-1"><i class="fa-solid fa-bolt text-sky-400"></i> Streak / Combo</span>
+                <div class="flex items-center justify-center gap-1">
+                    <span id="streak-display" class="text-2xl sm:text-3xl font-extrabold text-sky-400">0</span>
+                    <span id="multiplier-badge" class="text-xs font-bold bg-amber-400 text-slate-900 px-1.5 py-0.5 rounded hidden">1x</span>
+                </div>
+            </div>
+            <div class="bg-slate-800/90 border border-slate-700/80 rounded-xl p-3 sm:p-4 text-center">
+                <span class="text-xs text-slate-400 font-medium uppercase tracking-wider block mb-1"><i class="fa-solid fa-circle-check text-emerald-400"></i> Matched</span>
+                <span id="progress-text" class="text-2xl sm:text-3xl font-extrabold text-emerald-400">0 / 0</span>
+            </div>
+            <div class="bg-slate-800/90 border border-slate-700/80 rounded-xl p-3 sm:p-4 text-center">
+                <span class="text-xs text-slate-400 font-medium uppercase tracking-wider block mb-1"><i class="fa-solid fa-clock text-rose-400"></i> Speed Timer</span>
+                <span id="timer-display" class="text-2xl sm:text-3xl font-extrabold text-rose-400">--</span>
+            </div>
+        </div>
+
+        <!-- FILTER & MODE CONTROLS -->
+        <div class="bg-slate-800/80 border border-slate-700 p-4 rounded-2xl mb-6 flex flex-col md:flex-row gap-4 items-center justify-between">
+            <div class="w-full md:w-1/2 flex items-center gap-2">
+                <label for="module-select" class="text-xs sm:text-sm font-semibold text-sky-300 shrink-0"><i class="fa-solid fa-filter"></i> Module:</label>
+                <select id="module-select" onchange="changeModule()" class="w-full bg-slate-900 border border-slate-600 text-slate-200 rounded-xl px-3 py-2 text-xs sm:text-sm font-medium focus:ring-2 focus:ring-sky-500 focus:outline-none custom-scrollbar">
+                    <option value="ALL">All 20 Clinical Modules (Full Challenge)</option>
+                    <!-- Options injected dynamically -->
+                </select>
+            </div>
+            <div class="w-full md:w-auto flex items-center justify-center gap-2 bg-slate-900/80 p-1.5 rounded-xl border border-slate-700 w-full md:w-auto">
+                <button id="mode-matrix-btn" onclick="setGameMode('matrix')" class="flex-1 md:flex-initial px-4 py-2 rounded-lg text-xs sm:text-sm font-bold transition flex items-center justify-center gap-2 bg-sky-600 text-white shadow">
+                    <i class="fa-solid fa-border-all"></i> Match Matrix
+                </button>
+                <button id="mode-speed-btn" onclick="setGameMode('speed')" class="flex-1 md:flex-initial px-4 py-2 rounded-lg text-xs sm:text-sm font-bold transition flex items-center justify-center gap-2 text-slate-400 hover:text-white">
+                    <i class="fa-solid fa-stopwatch"></i> Speed Quiz
+                </button>
+            </div>
+        </div>
+
+        <!-- PROGRESS BAR -->
+        <div class="w-full bg-slate-800 rounded-full h-3 mb-6 overflow-hidden border border-slate-700 p-0.5">
+            <div id="progress-bar" class="bg-gradient-to-r from-sky-500 via-tealmed-500 to-emerald-400 h-full rounded-full transition-all duration-300" style="width: 0%"></div>
+        </div>
+
+        <!-- GAMEPLAY CONTAINER -->
+        <main class="flex-grow relative">
+            
+            <!-- MODE 1: MATCH MATRIX GRID -->
+            <div id="matrix-mode" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- FORMAL CLINICAL COLUMN -->
+                <div class="bg-slate-800/50 border border-slate-700/80 rounded-2xl p-4 sm:p-5 flex flex-col">
+                    <div class="flex items-center justify-between mb-4 border-b border-slate-700 pb-3">
+                        <h2 class="text-sm sm:text-base font-bold text-sky-400 flex items-center gap-2">
+                            <i class="fa-solid fa-file-medical"></i> Formal Clinical Phrase
+                        </h2>
+                        <span class="text-[11px] text-slate-400 bg-slate-900 px-2 py-0.5 rounded-full">Select 1 Card</span>
+                    </div>
+                    <div id="formal-cards-container" class="space-y-3 flex-grow custom-scrollbar overflow-y-auto max-h-[500px] pr-1">
+                        <!-- Cards dynamically populated -->
+                    </div>
+                </div>
+
+                <!-- INFORMAL CONVERSATIONAL COLUMN -->
+                <div class="bg-slate-800/50 border border-slate-700/80 rounded-2xl p-4 sm:p-5 flex flex-col">
+                    <div class="flex items-center justify-between mb-4 border-b border-slate-700 pb-3">
+                        <h2 class="text-sm sm:text-base font-bold text-tealmed-500 flex items-center gap-2">
+                            <i class="fa-solid fa-comments"></i> Informal / Patient Equivalent
+                        </h2>
+                        <span class="text-[11px] text-slate-400 bg-slate-900 px-2 py-0.5 rounded-full">Select Matching Pair</span>
+                    </div>
+                    <div id="informal-cards-container" class="space-y-3 flex-grow custom-scrollbar overflow-y-auto max-h-[500px] pr-1">
+                        <!-- Cards dynamically populated -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- MODE 2: FAST-PACED SPEED QUIZ -->
+            <div id="speed-mode" class="hidden max-w-2xl mx-auto bg-slate-800 border border-slate-700 rounded-2xl p-6 shadow-2xl">
+                <div class="flex items-center justify-between mb-4">
+                    <span id="speed-module-badge" class="bg-sky-500/20 text-sky-300 text-xs font-semibold px-3 py-1 rounded-full border border-sky-500/30">
+                        Module 1: Assessment
+                    </span>
+                    <span class="text-xs text-slate-400"><i class="fa-solid fa-bolt text-amber-400"></i> Speed Challenge</span>
+                </div>
+                
+                <div class="bg-slate-900 p-5 rounded-xl border border-sky-500/30 mb-6">
+                    <p class="text-xs text-sky-400 font-bold uppercase tracking-wide mb-1">Formal Clinical Phrase:</p>
+                    <p id="speed-formal-prompt" class="text-lg sm:text-xl font-bold text-slate-100 leading-snug">
+                        "Loading question..."
+                    </p>
+                </div>
+
+                <p class="text-xs text-slate-400 font-semibold mb-3"><i class="fa-solid fa-hand-pointer"></i> Select the correct Informal / Reassuring equivalent:</p>
+                <div id="speed-options-container" class="space-y-3">
+                    <!-- Speed options dynamically generated -->
+                </div>
+            </div>
+
+        </main>
+
+        <!-- FOOTER INFO -->
+        <footer class="mt-8 py-4 border-t border-slate-800 text-center text-xs text-slate-500 flex flex-col sm:flex-row items-center justify-between gap-2">
+            <p>© Spoken English Curriculum for Nursing Care Plan Training • Non-English Speaking Countries</p>
+            <p>Designed for Interactive Clinical Learning by <span class="text-sky-400 font-semibold">Giyono Asfarrasyid</span></p>
+        </footer>
+    </div>
+
+    <!-- END GAME SUMMARY MODAL -->
+    <div id="summary-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-slate-900 border border-slate-700 rounded-3xl p-6 sm:p-8 max-w-lg w-full text-center shadow-2xl animate-pop relative overflow-hidden">
+            <div class="w-20 h-20 bg-gradient-to-tr from-amber-400 to-amber-200 rounded-3xl flex items-center justify-center text-slate-900 text-4xl mx-auto mb-4 shadow-lg shadow-amber-500/20">
+                <i class="fa-solid fa-award"></i>
+            </div>
+            <h2 class="text-2xl sm:text-3xl font-extrabold text-white mb-1">Clinical Scenario Complete!</h2>
+            <p class="text-xs sm:text-sm text-slate-400 mb-6">Match Matrix Performance Summary</p>
+
+            <div class="bg-slate-800/80 rounded-2xl p-4 border border-slate-700 mb-6 grid grid-cols-3 gap-3">
+                <div>
+                    <span class="text-[10px] text-slate-400 font-bold uppercase block">Final Score</span>
+                    <span id="final-score" class="text-xl sm:text-2xl font-black text-amber-400">0</span>
+                </div>
+                <div>
+                    <span class="text-[10px] text-slate-400 font-bold uppercase block">Accuracy</span>
+                    <span id="final-accuracy" class="text-xl sm:text-2xl font-black text-emerald-400">100%</span>
+                </div>
+                <div>
+                    <span class="text-[10px] text-slate-400 font-bold uppercase block">Max Streak</span>
+                    <span id="final-streak" class="text-xl sm:text-2xl font-black text-sky-400">0</span>
+                </div>
+            </div>
+
+            <div class="bg-slate-800/50 rounded-xl p-3 border border-slate-700/60 mb-6 text-left">
+                <p class="text-xs text-sky-300 font-bold mb-1"><i class="fa-solid fa-graduation-cap"></i> Senior Clinical Assessment:</p>
+                <p id="performance-grade" class="text-xs text-slate-300 italic">"Excellent command of therapeutic communication."</p>
+            </div>
+
+            <div class="flex flex-col sm:flex-row gap-3">
+                <button onclick="downloadScorecard()" class="flex-1 bg-tealmed-600 hover:bg-tealmed-500 text-white py-3 rounded-xl font-bold text-xs sm:text-sm transition flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-download"></i> Download Scorecard
+                </button>
+                <button onclick="resetGame(); closeModal();" class="flex-1 bg-sky-600 hover:bg-sky-500 text-white py-3 rounded-xl font-bold text-xs sm:text-sm transition flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-play"></i> Play Again
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- JAVASCRIPT GAME LOGIC -->
+    <script>
+        /* ==========================================================================
+           1. FULL CLINICAL DATASET (ALL 20 CURRICULUM MODULES)
+           ========================================================================== */
+        const clinicalModules = [
+            { id: 1, name: "Module 1: Assessment & Intake" },
+            { id: 2, name: "Module 2: Vital Signs Reporting" },
+            { id: 3, name: "Module 3: Nursing Diagnosis" },
+            { id: 4, name: "Module 4: Doctor ISBAR Consult" },
+            { id: 5, name: "Module 5: Medication Safety" },
+            { id: 6, name: "Module 6: Delivering Treatments" },
+            { id: 7, name: "Module 7: Observation & Evaluation" },
+            { id: 8, name: "Module 8: Admin & HR Communication" },
+            { id: 9, name: "Module 9: Pediatric Care" },
+            { id: 10, name: "Module 10: Critical Care & RRT" },
+            { id: 11, name: "Module 11: Infection Control" },
+            { id: 12, name: "Module 12: Discharge Planning" },
+            { id: 13, name: "Module 13: Perioperative & Surgical" },
+            { id: 14, name: "Module 14: Mental Health & De-escalation" },
+            { id: 15, name: "Module 15: Oncology Care" },
+            { id: 16, name: "Module 16: Emergency Triage" },
+            { id: 17, name: "Module 17: Community Health" },
+            { id: 18, name: "Module 18: Home Healthcare" },
+            { id: 19, name: "Module 19: Geriatric & Dementia Care" },
+            { id: 20, name: "Module 20: Palliative & End-of-Life" }
+        ];
+
+        const fullDataset = [
+            // Module 1
+            { id: "m1-1", moduleId: 1, formal: "Could you rate your current abdominal pain on a scale from 0 to 10?", informal: "On a scale of 0 to 10, how bad is it hurting right now?" },
+            { id: "m1-2", moduleId: 1, formal: "Does the discomfort radiate to your jaw, back, or left upper extremity?", informal: "Does that pain spread anywhere else, like your neck or left arm?" },
+            // Module 2
+            { id: "m2-1", moduleId: 1, formal: "I am going to check your arterial blood pressure and oxygen saturation now.", informal: "I'm just going to pop this sleeve on your arm and a clip on your finger." },
+            { id: "m2-2", moduleId: 2, formal: "Patient in Bed 4 is febrile at 38.8°C with a pulse of 112 beats per minute.", informal: "Mr. Davis in Bed 4 spiked a fever of 38.8 and his heart rate is running fast." },
+            // Module 3
+            { id: "m3-1", moduleId: 3, formal: "My primary nursing diagnosis is Ineffective Airway Clearance related to retained secretions.", informal: "His main issue right now is he can't clear his chest because of all the phlegm." },
+            // Module 4
+            { id: "m4-1", moduleId: 4, formal: "Requesting an immediate bedside evaluation and stat arterial blood gas analysis.", informal: "I think we need you to come take a look at him right away and run some blood tests." },
+            // Module 5
+            { id: "m5-1", moduleId: 5, formal: "Please state your full name and date of birth while I verify your identification band.", informal: "Can you tell me your full name and birthday real quick before I give you your meds?" },
+            { id: "m5-2", moduleId: 5, formal: "This is Metoprolol 50 mg prescribed for blood pressure regulation.", informal: "This is your blood pressure pill, Metoprolol, to keep your numbers steady." },
+            // Module 6
+            { id: "m6-1", moduleId: 6, formal: "I am going to perform a sterile dressing change on your surgical wound now.", informal: "I'm going to clean up your surgical wound and put a fresh bandage on it." },
+            // Module 7
+            { id: "m7-1", moduleId: 7, formal: "Auscultation confirms clearer lung fields bilaterally and oxygen saturation is stable.", informal: "Your lungs sound a lot clearer today and your oxygen levels are looking great!" },
+            // Module 8
+            { id: "m8-1", moduleId: 8, formal: "I am writing to formally request a shift rotation swap with Nurse David.", informal: "I was wondering if I could switch my Friday night shift with David next week?" },
+            // Module 9
+            { id: "m9-1", moduleId: 9, formal: "Could you describe the duration and frequency of your child's febrile episodes?", informal: "How long has little Leo been running this fever, and how often is it spiking?" },
+            // Module 10
+            { id: "m10-1", moduleId: 10, formal: "Activate the Rapid Response Team immediately! Patient is experiencing respiratory arrest.", informal: "Call a Code / Rapid Response right now! He's stopped breathing!" },
+            // Module 11
+            { id: "m11-1", moduleId: 11, formal: "Because your lab tests indicate a contagious pathogen, we are initiating Airborne Precautions.", informal: "Because your test came back positive for an airborne bug, we need extra safety gear." },
+            // Module 12
+            { id: "m12-1", moduleId: 12, formal: "I will now review your home discharge instructions, including wound care management.", informal: "Let's sit down and go over your home care plan and how to look after your bandage." },
+            // Module 13
+            { id: "m13-1", moduleId: 13, formal: "Please confirm which knee is scheduled for arthroscopic surgical intervention today.", informal: "Can you point to which knee we're operating on today?" },
+            // Module 14
+            { id: "m14-1", moduleId: 14, formal: "I observe that you are feeling overwhelmed. Let us sit down and discuss what is troubling you.", informal: "I can see you're upset right now. You're safe here—let's sit down and talk." },
+            // Module 15
+            { id: "m15-1", moduleId: 15, formal: "If you experience any burning or stinging sensation near your IV port, alert me immediately.", informal: "If you feel any burning or pinching around your port while this runs, tell me right away!" },
+            // Module 16
+            { id: "m16-1", moduleId: 16, formal: "35-year-old male, motor vehicle collision. GCS 10, hypotensive at 80/50.", informal: "35-year-old guy from a car crash. Groggy score of 10, blood pressure down to 80 over 50." },
+            // Module 17
+            { id: "m17-1", moduleId: 17, formal: "Mild localized swelling or transient low-grade pyrexia may occur post-immunization.", informal: "She might get a little redness on her leg or run a slight fever after her shots." },
+            // Module 18
+            { id: "m18-1", moduleId: 18, formal: "Ensure you reposition him laterally every two hours to alleviate pressure off the sacrum.", informal: "Remember to turn him onto his side every two hours so he isn't resting on his tailbone." },
+            // Module 19
+            { id: "m19-1", moduleId: 19, formal: "Work is finished for the day, Mrs. Miller. Let us enjoy a warm beverage together.", informal: "You're all done with work for today, Mrs. Miller! How about a nice warm cup of tea?" },
+            // Module 20
+            { id: "m20-1", moduleId: 20, formal: "His breathing pattern is showing Cheyne-Stokes respiration, a normal end-of-life progression.", informal: "His breathing rhythm is speeding up and slowing down—that's a very normal sign as the body rests." }
+        ];
+
+        /* ==========================================================================
+           2. WEB AUDIO API SYNTHESIZER SOUND SYSTEM
+           ========================================================================== */
+        let audioCtx = null;
+        let isMuted = false;
+
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        }
+
+        function toggleAudio() {
+            isMuted = !isMuted;
+            document.getElementById('sound-text').innerText = isMuted ? "SFX: OFF" : "SFX: ON";
+            document.getElementById('sound-icon').className = isMuted ? "fa-solid fa-volume-xmark text-slate-400" : "fa-solid fa-volume-high text-amber-400";
+        }
+
+        // Correct Fanfare Sound
+        function playCorrectSound() {
+            if (isMuted) return;
+            initAudio();
+            const now = audioCtx.currentTime;
+            
+            // Major Triad Arpeggio (C5, E5, G5, C6)
+            const notes = [523.25, 659.25, 783.99, 1046.50];
+            notes.forEach((freq, index) => {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(freq, now + (index * 0.08));
+                
+                gain.gain.setValueAtTime(0, now + (index * 0.08));
+                gain.gain.linearRampToValueAtTime(0.15, now + (index * 0.08) + 0.02);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + (index * 0.08) + 0.3);
+                
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                
+                osc.start(now + (index * 0.08));
+                osc.stop(now + (index * 0.08) + 0.3);
+            });
+        }
+
+        // Incorrect "BAM!" Bad Buzz Sound
+        function playIncorrectSound() {
+            if (isMuted) return;
+            initAudio();
+            const now = audioCtx.currentTime;
+
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(150, now);
+            osc.frequency.exponentialRampToValueAtTime(40, now + 0.35);
+
+            gain.gain.setValueAtTime(0.3, now);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + 0.35);
+
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+
+            osc.start(now);
+            osc.stop(now + 0.35);
+        }
+
+        /* ==========================================================================
+           3. GAME STATE & VARIABLES
+           ========================================================================== */
+        let currentGameMode = 'matrix'; // 'matrix' or 'speed'
+        let currentModuleFilter = 'ALL';
+        let activePairs = [];
+        let score = 0;
+        let streak = 0;
+        let totalMatched = 0;
+        let totalAttempts = 0;
+        let selectedFormalCard = null;
+        let selectedInformalCard = null;
+        let speedTimerInterval = null;
+        let speedTimeRemaining = 10;
+        let currentSpeedQuestion = null;
+
+        /* ==========================================================================
+           4. INITIALIZATION & MODULE FILTER SETUP
+           ========================================================================== */
+        window.onload = function() {
+            populateModuleDropdown();
+            resetGame();
+        };
+
+        function populateModuleDropdown() {
+            const select = document.getElementById('module-select');
+            clinicalModules.forEach(mod => {
+                const opt = document.createElement('option');
+                opt.value = mod.id;
+                opt.innerText = mod.name;
+                select.appendChild(opt);
+            });
+        }
+
+        function changeModule() {
+            currentModuleFilter = document.getElementById('module-select').value;
+            resetGame();
+        }
+
+        function setGameMode(mode) {
+            currentGameMode = mode;
+            document.getElementById('mode-matrix-btn').className = mode === 'matrix' 
+                ? "flex-1 md:flex-initial px-4 py-2 rounded-lg text-xs sm:text-sm font-bold transition flex items-center justify-center gap-2 bg-sky-600 text-white shadow"
+                : "flex-1 md:flex-initial px-4 py-2 rounded-lg text-xs sm:text-sm font-bold transition flex items-center justify-center gap-2 text-slate-400 hover:text-white";
+            
+            document.getElementById('mode-speed-btn').className = mode === 'speed' 
+                ? "flex-1 md:flex-initial px-4 py-2 rounded-lg text-xs sm:text-sm font-bold transition flex items-center justify-center gap-2 bg-sky-600 text-white shadow"
+                : "flex-1 md:flex-initial px-4 py-2 rounded-lg text-xs sm:text-sm font-bold transition flex items-center justify-center gap-2 text-slate-400 hover:text-white";
+
+            document.getElementById('matrix-mode').classList.toggle('hidden', mode !== 'matrix');
+            document.getElementById('speed-mode').classList.toggle('hidden', mode !== 'speed');
+
+            resetGame();
+        }
+
+        /* ==========================================================================
+           5. GAME RESET & RENDERING
+           ========================================================================== */
+        function resetGame() {
+            clearInterval(speedTimerInterval);
+            score = 0;
+            streak = 0;
+            totalMatched = 0;
+            totalAttempts = 0;
+            selectedFormalCard = null;
+            selectedInformalCard = null;
+
+            // Filter Dataset based on dropdown
+            if (currentModuleFilter === 'ALL') {
+                activePairs = [...fullDataset];
+            } else {
+                const modId = parseInt(currentModuleFilter);
+                activePairs = fullDataset.filter(item => item.moduleId === modId);
+            }
+
+            // Shuffle active pairs
+            activePairs = shuffleArray(activePairs);
+
+            updateStatsDisplay();
+
+            if (currentGameMode === 'matrix') {
+                renderMatrixCards();
+            } else {
+                loadNextSpeedQuestion();
+            }
+        }
+
+        function updateStatsDisplay() {
+            document.getElementById('score-display').innerText = score;
+            document.getElementById('streak-display').innerText = streak;
+            document.getElementById('progress-text').innerText = `${totalMatched} / ${activePairs.length}`;
+            
+            // Streak Multiplier Badge
+            const badge = document.getElementById('multiplier-badge');
+            if (streak >= 3) {
+                badge.classList.remove('hidden');
+                badge.innerText = `${Math.min(3, Math.floor(streak / 2))}x Combo!`;
+            } else {
+                badge.classList.add('hidden');
+            }
+
+            // Progress bar
+            const percent = activePairs.length > 0 ? (totalMatched / activePairs.length) * 100 : 0;
+            document.getElementById('progress-bar').style.width = `${percent}%`;
+        }
+
+        /* ==========================================================================
+           6. MATRIX MATCHING MODE LOGIC
+           ========================================================================== */
+        function renderMatrixCards() {
+            const formalContainer = document.getElementById('formal-cards-container');
+            const informalContainer = document.getElementById('informal-cards-container');
+
+            formalContainer.innerHTML = '';
+            informalContainer.innerHTML = '';
+
+            // Separate and shuffle lists for columns
+            const formalList = [...activePairs];
+            const informalList = shuffleArray([...activePairs]);
+
+            formalList.forEach(item => {
+                const card = document.createElement('div');
+                card.id = `formal-${item.id}`;
+                card.className = "p-3.5 bg-slate-900/90 border border-slate-700/80 rounded-xl cursor-pointer hover:border-sky-500 transition-all text-xs sm:text-sm font-medium text-slate-200 shadow flex items-start gap-3 select-none";
+                card.onclick = () => selectFormalCard(item, card);
+                card.innerHTML = `
+                    <div class="w-6 h-6 rounded-lg bg-sky-500/20 text-sky-400 flex items-center justify-center shrink-0 mt-0.5 font-bold text-[10px]">F</div>
+                    <div class="flex-grow">
+                        <p class="leading-relaxed">"${item.formal}"</p>
+                        <span class="text-[10px] text-slate-500 font-semibold block mt-1"><i class="fa-solid fa-layer-group"></i> ${getModuleName(item.moduleId)}</span>
+                    </div>
+                `;
+                formalContainer.appendChild(card);
+            });
+
+            informalList.forEach(item => {
+                const card = document.createElement('div');
+                card.id = `informal-${item.id}`;
+                card.className = "p-3.5 bg-slate-900/90 border border-slate-700/80 rounded-xl cursor-pointer hover:border-tealmed-500 transition-all text-xs sm:text-sm font-medium text-slate-200 shadow flex items-start gap-3 select-none";
+                card.onclick = () => selectInformalCard(item, card);
+                card.innerHTML = `
+                    <div class="w-6 h-6 rounded-lg bg-tealmed-500/20 text-tealmed-400 flex items-center justify-center shrink-0 mt-0.5 font-bold text-[10px]">I</div>
+                    <div class="flex-grow">
+                        <p class="leading-relaxed">"${item.informal}"</p>
+                    </div>
+                `;
+                informalContainer.appendChild(card);
+            });
+        }
+
+        function selectFormalCard(item, cardElement) {
+            initAudio();
+            if (cardElement.classList.contains('opacity-40')) return; // Already matched
+
+            // Highlight formal card
+            document.querySelectorAll('#formal-cards-container > div').forEach(c => {
+                c.classList.remove('ring-2', 'ring-sky-400', 'bg-sky-950/40');
+            });
+            cardElement.classList.add('ring-2', 'ring-sky-400', 'bg-sky-950/40');
+            selectedFormalCard = { item, element: cardElement };
+
+            checkMatrixMatch();
+        }
+
+        function selectInformalCard(item, cardElement) {
+            initAudio();
+            if (cardElement.classList.contains('opacity-40')) return; // Already matched
+
+            // Highlight informal card
+            document.querySelectorAll('#informal-cards-container > div').forEach(c => {
+                c.classList.remove('ring-2', 'ring-tealmed-400', 'bg-tealmed-950/40');
+            });
+            cardElement.classList.add('ring-2', 'ring-tealmed-400', 'bg-tealmed-950/40');
+            selectedInformalCard = { item, element: cardElement };
+
+            checkMatrixMatch();
+        }
+
+        function checkMatrixMatch() {
+            if (selectedFormalCard && selectedInformalCard) {
+                totalAttempts++;
+                
+                if (selectedFormalCard.item.id === selectedInformalCard.item.id) {
+                    // CORRECT MATCH
+                    playCorrectSound();
+                    triggerConfetti();
+
+                    const points = 100 + (streak * 20);
+                    score += points;
+                    streak++;
+                    totalMatched++;
+
+                    // Mark matched visually
+                    selectedFormalCard.element.className = "p-3.5 bg-emerald-950/40 border border-emerald-500/50 rounded-xl opacity-40 pointer-events-none text-xs sm:text-sm text-emerald-300 flex items-start gap-3";
+                    selectedInformalCard.element.className = "p-3.5 bg-emerald-950/40 border border-emerald-500/50 rounded-xl opacity-40 pointer-events-none text-xs sm:text-sm text-emerald-300 flex items-start gap-3";
+                    
+                    selectedFormalCard = null;
+                    selectedInformalCard = null;
+
+                    updateStatsDisplay();
+
+                    if (totalMatched === activePairs.length) {
+                        setTimeout(showSummaryModal, 600);
+                    }
+                } else {
+                    // INCORRECT MATCH -> "BAM!"
+                    playIncorrectSound();
+                    triggerBamOverlay();
+
+                    score = Math.max(0, score - 30);
+                    streak = 0;
+
+                    // Shake animation
+                    selectedFormalCard.element.classList.add('animate-shake', 'border-rose-500');
+                    selectedInformalCard.element.classList.add('animate-shake', 'border-rose-500');
+
+                    setTimeout(() => {
+                        if (selectedFormalCard) {
+                            selectedFormalCard.element.classList.remove('ring-2', 'ring-sky-400', 'bg-sky-950/40', 'animate-shake', 'border-rose-500');
+                        }
+                        if (selectedInformalCard) {
+                            selectedInformalCard.element.classList.remove('ring-2', 'ring-tealmed-400', 'bg-tealmed-950/40', 'animate-shake', 'border-rose-500');
+                        }
+                        selectedFormalCard = null;
+                        selectedInformalCard = null;
+                    }, 500);
+
+                    updateStatsDisplay();
+                }
+            }
+        }
+
+        /* ==========================================================================
+           7. FAST-PACED SPEED QUIZ MODE
+           ========================================================================== */
+        function loadNextSpeedQuestion() {
+            clearInterval(speedTimerInterval);
+
+            if (totalMatched >= activePairs.length) {
+                showSummaryModal();
+                return;
+            }
+
+            currentSpeedQuestion = activePairs[totalMatched];
+            document.getElementById('speed-module-badge').innerText = getModuleName(currentSpeedQuestion.moduleId);
+            document.getElementById('speed-formal-prompt').innerText = `"${currentSpeedQuestion.formal}"`;
+
+            // Prepare 3 distractors + 1 correct option
+            let options = [currentSpeedQuestion];
+            let distractors = fullDataset.filter(item => item.id !== currentSpeedQuestion.id);
+            distractors = shuffleArray(distractors).slice(0, 3);
+            options = shuffleArray([...options, ...distractors]);
+
+            const container = document.getElementById('speed-options-container');
+            container.innerHTML = '';
+
+            options.forEach((opt, idx) => {
+                const btn = document.createElement('button');
+                btn.className = "w-full p-4 bg-slate-900 border border-slate-700 hover:border-sky-500 rounded-xl text-left text-xs sm:text-sm font-medium text-slate-200 transition flex items-center gap-3 group";
+                btn.onclick = () => answerSpeedQuestion(opt.id, btn);
+                btn.innerHTML = `
+                    <span class="w-7 h-7 rounded-lg bg-slate-800 group-hover:bg-sky-500 group-hover:text-white text-slate-400 flex items-center justify-center text-xs font-bold shrink-0 transition">${String.fromCharCode(65 + idx)}</span>
+                    <span class="leading-relaxed">${opt.informal}</span>
+                `;
+                container.appendChild(btn);
+            });
+
+            // Start 10s Timer
+            speedTimeRemaining = 10;
+            document.getElementById('timer-display').innerText = `${speedTimeRemaining}s`;
+
+            speedTimerInterval = setInterval(() => {
+                speedTimeRemaining--;
+                document.getElementById('timer-display').innerText = `${speedTimeRemaining}s`;
+
+                if (speedTimeRemaining <= 0) {
+                    clearInterval(speedTimerInterval);
+                    // Time Out penalty
+                    playIncorrectSound();
+                    triggerBamOverlay();
+                    score = Math.max(0, score - 30);
+                    streak = 0;
+                    totalAttempts++;
+                    updateStatsDisplay();
+                    totalMatched++;
+                    setTimeout(loadNextSpeedQuestion, 800);
+                }
+            }, 1000);
+        }
+
+        function answerSpeedQuestion(selectedId, buttonElement) {
+            clearInterval(speedTimerInterval);
+            initAudio();
+            totalAttempts++;
+
+            if (selectedId === currentSpeedQuestion.id) {
+                // Correct
+                playCorrectSound();
+                triggerConfetti();
+
+                buttonElement.className = "w-full p-4 bg-emerald-950 border-2 border-emerald-500 rounded-xl text-left text-xs sm:text-sm font-bold text-emerald-200 flex items-center gap-3";
+                
+                score += 100 + (streak * 20);
+                streak++;
+                totalMatched++;
+                updateStatsDisplay();
+
+                setTimeout(loadNextSpeedQuestion, 800);
+            } else {
+                // Incorrect BAM!
+                playIncorrectSound();
+                triggerBamOverlay();
+
+                buttonElement.className = "w-full p-4 bg-rose-950 border-2 border-rose-500 rounded-xl text-left text-xs sm:text-sm font-bold text-rose-200 flex items-center gap-3 animate-shake";
+                
+                score = Math.max(0, score - 30);
+                streak = 0;
+                totalMatched++;
+                updateStatsDisplay();
+
+                setTimeout(loadNextSpeedQuestion, 800);
+            }
+        }
+
+        /* ==========================================================================
+           8. VISUAL FX & UTILITIES
+           ========================================================================== */
+        function triggerBamOverlay() {
+            const overlay = document.getElementById('bam-overlay');
+            overlay.classList.remove('hidden');
+            setTimeout(() => {
+                overlay.classList.add('hidden');
+            }, 600);
+        }
+
+        function triggerConfetti() {
+            if (typeof confetti === 'function') {
+                confetti({
+                    particleCount: 50,
+                    spread: 60,
+                    origin: { y: 0.7 }
+                });
+            }
+        }
+
+        function shuffleArray(array) {
+            const arr = [...array];
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+            return arr;
+        }
+
+        function getModuleName(id) {
+            const mod = clinicalModules.find(m => m.id === id);
+            return mod ? mod.name : "Clinical Module";
+        }
+
+        /* ==========================================================================
+           9. SUMMARY MODAL & SCORECARD DOWNLOAD
+           ========================================================================== */
+        function showSummaryModal() {
+            document.getElementById('summary-modal').classList.remove('hidden');
+            document.getElementById('final-score').innerText = score;
+            
+            const accuracy = totalAttempts > 0 ? Math.round((totalMatched / totalAttempts) * 100) : 100;
+            document.getElementById('final-accuracy').innerText = `${accuracy}%`;
+            document.getElementById('final-streak').innerText = streak;
+
+            let grade = "";
+            if (score >= 1500) grade = "🌟 Grade A+: Outstanding Clinical Fluency & Therapeutic Mastery!";
+            else if (score >= 1000) grade = "👍 Grade A: Strong Spoken English Competency across Patient Scenarios.";
+            else if (score >= 600) grade = "📘 Grade B: Good Proficiency; continue practicing formal-to-informal nuances.";
+            else grade = "✏️ Grade C: Needs Review; re-visit Curriculum Modules for better recall.";
+
+            document.getElementById('performance-grade').innerText = grade;
+        }
+
+        function closeModal() {
+            document.getElementById('summary-modal').classList.add('hidden');
+        }
+
+        function downloadScorecard() {
+            const accuracy = totalAttempts > 0 ? Math.round((totalMatched / totalAttempts) * 100) : 100;
+            const content = `===================================================================
+NURSING CARE PLAN: FORMAL TO INFORMAL MATCH MATRIX
+CLINICAL SPOKEN ENGLISH TRAINING SCORECARD
+===================================================================
+
+Curriculum Author: Giyono Asfarrasyid
+Completion Date: ${new Date().toLocaleString()}
+Module Selection: ${currentModuleFilter === 'ALL' ? 'All 20 Clinical Modules' : getModuleName(parseInt(currentModuleFilter))}
+
+PERFORMANCE SUMMARY:
+-------------------------------------------------------------------
+Final Score:       ${score} Points
+Total Matches:     ${totalMatched} / ${activePairs.length}
+Accuracy Rate:     ${accuracy}%
+Max Streak:        ${streak}
+
+CLINICAL EVALUATION GRADE:
+${document.getElementById('performance-grade').innerText}
+
+===================================================================
+Spoken English Curriculum for Nursing Care Plan Training
+Non-English Speaking Country Healthcare Professional Program
+===================================================================`;
+
+            const blob = new Blob([content], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `Nursing_English_Scorecard_${Date.now()}.txt`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+    </script>
+</body>
+</html>
